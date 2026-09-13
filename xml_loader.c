@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2026 apg
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/**
+ * @file xml_loader.c
+ * @brief XML file loading for the preview pipeline (ROADMAP M2).
+ *
+ * Reads the whole input file into memory and hands it to the orchestrator as a
+ * plain C string. Downstream stages (DOM parser, template expansion, GTK
+ * builder, renderer/export) consume the returned buffer.
+ */
+
+#include "xml_loader.h"
+
+#include <stdlib.h>
+#include <glib.h>
+
+char *load_file(const char *path) {
+    gsize length = 0;
+    char *content = NULL;
+    GError *error = NULL;
+
+    if (!g_file_get_contents(path, &content, &length, &error)) {
+        g_printerr("load_file: failed to read %s: %s\n", path, error->message);
+        g_error_free(error);
+        exit(EXIT_FAILURE);
+    }
+
+    /* Copy exactly the file bytes so the buffer is guaranteed NUL-terminated
+     * regardless of how g_file_get_contents() decided to read the file. */
+    char *result = g_strndup(content, length);
+    g_free(content);
+
+    return result;
+}
+
+int render_interface(const char *input_path,
+                     const char *output_path,
+                     int width,
+                     int height) {
+    (void) input_path;
+    (void) output_path;
+    (void) width;
+    (void) height;
+
+    return EXIT_SUCCESS;
+}
