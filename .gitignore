@@ -1,0 +1,5 @@
+# Flatpak SDK sandbox state
+/.flatpak-build/
+
+# Build tree
+/_build/
