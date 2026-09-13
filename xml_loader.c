@@ -41,6 +41,8 @@ char *load_file(const char *path) {
         exit(EXIT_FAILURE);
     }
 
+    g_print("File read: %s\n", content);
+
     /* Copy exactly the file bytes so the buffer is guaranteed NUL-terminated
      * regardless of how g_file_get_contents() decided to read the file. */
     char *result = g_strndup(content, length);

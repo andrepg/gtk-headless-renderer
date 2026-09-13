@@ -59,7 +59,6 @@ int main(const int argument_count, char *arguments[]) {
 
     // Initialize Adwaita (and Gtk, chained per dependencies)
     g_print("Initializing Adwaita toolkit\n");
-
     adw_init();
 
     const struct Config config = parse_config(arguments);
