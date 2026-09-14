@@ -58,7 +58,8 @@ struct Config {
  * @param arguments CLI arguments to parse.
  * @return Config struct with defined values.
  */
-static struct Config parse_config(const int argument_count, char *arguments[]) {
+static inline struct Config parse_config(const int argument_count,
+                                         char *arguments[]) {
     struct Config config;
 
     const int width = atoi(arguments[ARG_WIDTH_IDX]);
