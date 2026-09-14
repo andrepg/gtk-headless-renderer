@@ -28,11 +28,13 @@
  */
 
 #include <stdlib.h>
-#include <string.h>
 #include <glib.h>
 #include <adwaita.h>
 #include "utils.h"
 #include "xml_loader.h"
+#include "xml_parser.h"
+#include "component_registry.h"
+#include "normalization.h"
 
 /**
  * Program entry point.
@@ -47,6 +49,8 @@
  * @return EXIT_SUCCESS on success, EXIT_FAILURE on invalid usage.
  */
 int main(const int argument_count, char *arguments[]) {
+    g_print("\n\n\n");
+
     if (argument_count < 3) {
         g_printerr("Wrong number of arguments.");
         return EXIT_FAILURE;
@@ -61,16 +65,40 @@ int main(const int argument_count, char *arguments[]) {
     g_print("Initializing Adwaita toolkit\n");
     adw_init();
 
-    const struct Config config = parse_config(arguments);
-
-    g_print("Output path: %s\n", config.output_path);
+    g_print("Parsing CLI arguments\n\n");
+    const struct Config config = parse_config(argument_count, arguments);
 
     // Phase 1: load the XML into memory for the parser/normalization pipeline.
     gchar *xml = load_file(config.input_path);
-    g_print("Loaded XML from %s (%lu bytes)\n",
-            config.input_path, (unsigned long) strlen(xml));
+    g_print("Loaded XML from %s\n", config.input_path);
 
-    // Phase 2+: xml_parser -> xml_transform -> gtk_loader -> renderer -> export
+    // Phase 2: parse the raw XML into our display-free DOM (ROADMAP M3).
+    Node *template_file = parse_xml(xml);
+    if (template_file == NULL) {
+        g_printerr("main: failed to parse %s\n", config.input_path);
+        g_free(xml);
+        return EXIT_FAILURE;
+    }
+
+    // Phase 3: index sibling .ui interfaces (ROADMAP M4). The scan folder comes
+    // from the new optional positional argument; when absent the registry
+    // derives it from the input file's own directory.
+    component_registry_init_scan(config.input_path, config.src_dir);
+#ifdef DEBUG
+    component_registry_dump();
+#endif
+
+    // Phase 2.5: normalize the DOM (copy template parent into class).
+    normalize_templates(template_file);
+
+#ifdef DEBUG
+    g_print("\n\nParsed DOM:\n");
+    print_node(template_file, 0);
+#endif
+
+    component_registry_cleanup();
+
+    free_node(template_file);
     g_free(xml);
 
     return EXIT_SUCCESS;
