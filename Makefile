@@ -35,15 +35,21 @@ BUILD_MODE := release
 endif
 
 TARGET = $(BUILD_TREE)/gtk_embedded_preview
-SRCS   = main.c xml_loader.c xml_parser.c component_registry.c normalizer.c renderer.c
 OBJS   = $(patsubst %.c,$(BUILD_TREE)/%.o,$(SRCS))
 DEPS   = $(OBJS:.o=.d)
 PKGS   = libadwaita-1 libxml-2.0
+SRCS   = main.c \
+         src/xml_loader.c \
+         src/xml_parser.c \
+         src/component_registry.c \
+         src/normalizer.c \
+         src/serializer.c \
+         src/renderer.c
 
 # Extra program arguments, e.g.: make run ARGS="in.ui out.png 800 600 src/"
 ARGS   ?=
 
-CFLAGS  += -std=gnu17 -Wall -Wextra $(shell pkg-config --cflags $(PKGS))
+CFLAGS  += -std=gnu17 -Isrc -Wall -Wextra $(shell pkg-config --cflags $(PKGS))
 ifeq ($(DEBUG),1)
   CFLAGS += -g -O0 -DDEBUG
 else
@@ -83,6 +89,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 $(BUILD_TREE)/%.o: %.c | $(BUILD_TREE)
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -MMD -MP -c -o $@ $<
 
 $(BUILD_TREE):
