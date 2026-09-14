@@ -20,11 +20,11 @@
  * @file main.c
  * @brief CLI entry point and orchestrator of the preview pipeline.
  *
- * Boots the headless Broadway display and the Adwaita/GTK toolkits, parses the
- * positional command-line arguments (see parse_config() in utils.h) and loads
- * the input XML into memory so the parser/normalization pipeline
- * (ROADMAP M2) can consume it. Later milestones attach the DOM parser,
- * template expansion, GTK builder, renderer and PNG export stages.
+ * Selects the headless Wayland display, initializes the Adwaita/GTK toolkits,
+ * parses the positional command-line arguments (see parse_config() in
+ * utils.h), loads the input XML, runs the parser/normalization pipeline
+ * (ROADMAP M2-M6) and finally renders the normalized DOM to a PNG snapshot
+ * through the renderer module (ROADMAP M7-M10).
  */
 
 #include <stdlib.h>
@@ -33,19 +33,20 @@
 #include "utils.h"
 #include "xml_loader.h"
 #include "xml_parser.h"
-#include "component_registry.h"
-#include "normalization.h"
+#include "normalizer.h"
+#include "renderer.h"
 
 /**
- * Requires at least the input and output paths. Selects a headless Broadway
- * display, initializes Adwaita, then loads the input XML into memory ready for
- * the parser/normalization pipeline.
+ * Requires at least the input and output paths. Selects a headless Wayland
+ * display, initializes Adwaita, then loads the input XML and runs the whole
+ * preview pipeline (parse, normalize, render to PNG).
  *
  * @brief The program main loop and entrypoint
  * @param argument_count number of elements in arguments, never 0.
  * @param arguments     argument vector; argument indexes are defined in
  *                      utils.h (ARG_*_IDX constants).
- * @return EXIT_SUCCESS on success, EXIT_FAILURE on invalid usage.
+ * @return EXIT_SUCCESS on success, EXIT_FAILURE on invalid usage or when the
+ *         rendering pipeline reports an error.
  */
 int main(const int argument_count, char *arguments[]) {
     g_print("\n\n\n");
@@ -72,16 +73,14 @@ int main(const int argument_count, char *arguments[]) {
         return EXIT_FAILURE;
     }
 
-    // normalize the DOM (copy template parent into class).
-    normalize_templates(template_file);
+    // normalize the DOM (copy template parent into class) and canonicalize it
+    // (root <interface> + <requires>), returning the owned root.
+    template_file = normalize_templates(template_file);
 
-#ifdef DEBUG
-    g_print("\n\nParsed DOM:\n");
-    print_node(template_file, 0);
-#endif
+    const int render_status = renderer_render_interface(config, template_file);
 
     free_node(template_file);
     g_free(xml);
 
-    return EXIT_SUCCESS;
+    return render_status;
 }
