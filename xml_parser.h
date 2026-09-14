@@ -104,4 +104,12 @@ char *get_attr(const Node *node, const char *key);
  */
 void set_attr(Node *node, const char *key, const char *value);
 
+/**
+ * Remove an attribute by name, freeing its memory.
+ *
+ * @param node Node to modify.
+ * @param key  Attribute name.
+ */
+void remove_attr(Node *node, const char *key);
+
 #endif /* GTK_EMBEDDED_PREVIEW_XML_PARSER_H */

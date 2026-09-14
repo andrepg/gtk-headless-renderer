@@ -140,8 +140,8 @@ Node *parse_xml(const char *xml) {
         return NULL;
 
     const xmlDocPtr doc = xmlReadMemory(xml, (int) strlen(xml),
-                                  "embedded.ui", NULL,
-                                  XML_PARSE_NONET | XML_PARSE_NOERROR);
+                                        "embedded.ui", NULL,
+                                        XML_PARSE_NONET | XML_PARSE_NOERROR);
     if (doc == NULL)
         return NULL;
 
@@ -236,4 +236,27 @@ void set_attr(Node *node, const char *key, const char *value) {
     attr->value = g_strdup(value);
     attr->next = node->attrs;
     node->attrs = attr;
+}
+
+void remove_attr(Node *node, const char *key) {
+    if (node == NULL || key == NULL)
+        return;
+
+    Attr *prev = NULL;
+    for (Attr *attribute = node->attrs; attribute != NULL; prev = attribute, attribute = attribute->next) {
+        if (!g_str_equal(attribute->name, key)) continue;
+
+        // Unlink the matched attribute: either bypass it in-place or advance the list head.
+        if (prev != NULL)
+            prev->next = attribute->next;
+        else
+            node->attrs = attribute->next;
+
+        // Frees name, value and attribute pointer itself
+        g_free(attribute->name);
+        g_free(attribute->value);
+        g_free(attribute);
+
+        return;
+    }
 }
