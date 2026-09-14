@@ -21,8 +21,8 @@
  * @brief Public interface of the XML loading / rendering dispatch module.
  */
 
-#ifndef GTK_EMBEDDED_PREVIEW_RENDERER_H
-#define GTK_EMBEDDED_PREVIEW_RENDERER_H
+#ifndef GTK_EMBEDDED_PREVIEW_XML_LOADER_H
+#define GTK_EMBEDDED_PREVIEW_XML_LOADER_H
 
 #include "xml_parser.h"
 
@@ -46,4 +46,4 @@ char *load_file(const char *path);
  */
 void print_node(const Node *current_node, int depth);
 
-#endif //GTK_EMBEDDED_PREVIEW_RENDERER_H
+#endif //GTK_EMBEDDED_PREVIEW_XML_LOADER_H
