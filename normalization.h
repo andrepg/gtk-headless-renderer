@@ -29,6 +29,10 @@
  *
  * Currently handles:
  *  - <template class="X" parent="Y"> → copies parent value into class.
+ *  - <object class="Custom"> → expands in place to the registered template's
+ *    parent class (<template parent="Y">) with its subtree, merging usage-site
+ *    <property> overrides and recursing into nested custom objects (cycle
+ *    guarded).
  *
  * @param root Root of the DOM tree to normalize.
  */
