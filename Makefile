@@ -35,7 +35,7 @@ BUILD_MODE := release
 endif
 
 TARGET = $(BUILD_TREE)/gtk_embedded_preview
-SRCS   = main.c xml_loader.c xml_parser.c component_registry.c normalization.c
+SRCS   = main.c xml_loader.c xml_parser.c component_registry.c normalizer.c renderer.c
 OBJS   = $(patsubst %.c,$(BUILD_TREE)/%.o,$(SRCS))
 DEPS   = $(OBJS:.o=.d)
 PKGS   = libadwaita-1 libxml-2.0
