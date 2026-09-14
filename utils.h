@@ -33,6 +33,7 @@ static const int ARG_INPUT_PATH_IDX = 1;
 static const int ARG_OUTPUT_PATH_IDX = 2;
 static const int ARG_WIDTH_IDX = 3;
 static const int ARG_HEIGHT_IDX = 4;
+static const int ARG_SRC_DIR_IDX = 5;
 
 /**
  * Command-line configuration parsed from the argument vector.
@@ -42,6 +43,7 @@ struct Config {
     char *output_path; /**< Destination PNG path. */
     int width;         /**< Canvas width in pixels for the generated image. */
     int height;        /**< Canvas height in pixels for the generated image. */
+    char *src_dir;     /**< Folder to scan for sibling .ui interfaces (optional; NULL = use input's directory). */
 };
 
 /**
@@ -50,10 +52,11 @@ struct Config {
  *
  * Width and height are optional: a missing or zero value falls back to 800x600.
  *
+ * @param argument_count number of elements in arguments, never 0.
  * @param arguments CLI arguments to parse.
  * @return Config struct with defined values.
  */
-static struct Config parse_config(char *arguments[]) {
+static struct Config parse_config(const int argument_count, char *arguments[]) {
     struct Config config;
 
     const int width = atoi(arguments[ARG_WIDTH_IDX]);
@@ -61,6 +64,8 @@ static struct Config parse_config(char *arguments[]) {
 
     config.input_path = arguments[ARG_INPUT_PATH_IDX];
     config.output_path = arguments[ARG_OUTPUT_PATH_IDX];
+
+    config.src_dir = argument_count > ARG_SRC_DIR_IDX ? arguments[ARG_SRC_DIR_IDX] : NULL;
 
     config.width = width ? width : 800;
     config.height = height ? height : 600;
