@@ -24,7 +24,7 @@
 
 #include <glib.h>
 #include "xml_parser.h"
-#include "normalization.h"
+#include "normalizer.h"
 #include "component_registry.h"
 
 /*

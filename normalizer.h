@@ -15,12 +15,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * @file normalization.h
+ * @file normalizer.h
  * @brief DOM normalization passes for the preview pipeline.
  */
 
-#ifndef GTK_EMBEDDED_PREVIEW_NORMALIZATION_H
-#define GTK_EMBEDDED_PREVIEW_NORMALIZATION_H
+#ifndef GTK_EMBEDDED_PREVIEW_NORMALIZER_H
+#define GTK_EMBEDDED_PREVIEW_NORMALIZER_H
 
 #include "xml_parser.h"
 
