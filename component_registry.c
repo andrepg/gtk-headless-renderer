@@ -163,6 +163,8 @@ void component_registry_cleanup(void) {
 }
 
 void component_registry_init_scan(const char *input_path, const char *ui_dir) {
+    g_print("component_registry: initializing component_registry\n");
+
     if (s_templates != NULL) {
         g_hash_table_destroy(s_templates);
         s_templates = NULL;
