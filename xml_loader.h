@@ -24,6 +24,8 @@
 #ifndef GTK_EMBEDDED_PREVIEW_RENDERER_H
 #define GTK_EMBEDDED_PREVIEW_RENDERER_H
 
+#include "xml_parser.h"
+
 /**
  * Read the entire contents of an XML file into a NUL-terminated string.
  *
@@ -49,5 +51,13 @@ int render_interface(const char *input_path,
                      const char *output_path,
                      int width,
                      int height);
+
+/**
+ * Debug-print the parsed DOM tree with indentation.
+ *
+ * @param root  Root node to start printing from.
+ * @param depth Initial indentation depth (usually 0).
+ */
+void print_node(const Node *root, int depth);
 
 #endif //GTK_EMBEDDED_PREVIEW_RENDERER_H

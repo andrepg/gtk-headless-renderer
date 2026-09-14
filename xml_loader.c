@@ -26,6 +26,7 @@
  */
 
 #include "xml_loader.h"
+#include "xml_parser.h"
 
 #include <stdlib.h>
 #include <glib.h>
@@ -43,9 +44,40 @@ char *load_file(const char *path) {
 
     /* Copy exactly the file bytes so the buffer is guaranteed NUL-terminated
      * regardless of how g_file_get_contents() decided to read the file. */
-    char *file_buffer = g_strndup(content, length);
+    return g_strndup(content, length);
+}
 
-    return file_buffer;
+/**
+ * Debug-printer for the parsed DOM (the M7 serializer does not exist yet).
+ * Prints element names, attributes and leaf text with indentation.
+ */
+static void print_indent(int depth) {
+    for (int i = 0; i < depth; i++)
+        g_print("  ");
+}
+
+void print_node(const Node *node, const int depth) {
+    for (const Node *current = node; current != NULL; current = current->next) {
+        print_indent(depth);
+        g_print("<%s", current->name);
+        for (const Attr *attribute = current->attrs;
+             attribute != NULL;
+             attribute = attribute->next)
+            g_print(" %s=\"%s\"", attribute->name, attribute->value);
+
+        if (current->content != NULL) {
+            g_print(">%s</%s>\n", current->content, current->name);
+            continue;
+        }
+        if (current->children != NULL) {
+            g_print(">\n");
+            print_node(current->children, depth + 1);
+            print_indent(depth);
+            g_print("</%s>\n", current->name);
+        } else {
+            g_print("/>\n");
+        }
+    }
 }
 
 int render_interface(const char *input_path,
