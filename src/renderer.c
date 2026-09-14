@@ -42,7 +42,6 @@ typedef struct {
     GtkWidget *root;
     int width;
     int height;
-    int tick_count;
     gboolean done;
     GMainLoop *loop;
 } RenderContext;
@@ -117,10 +116,11 @@ static GtkWidget *resolve_render_root(GtkBuilder *builder) {
 /* ---- capture + export (M9/M10) --------------------------------------- */
 
 /**
- * Snapshot + render the widget tree into a GdkTexture, save it to PNG, and
- * quit the main loop. Sets context->done only once a texture was saved.
+ * Snapshot + render the widget tree into a GdkTexture, save it to PNG.
+ *
+ * @return TRUE once a texture was snapshotted and saved to disk.
  */
-static void capture_and_save(GtkWidget *widget, RenderContext *context) {
+static gboolean capture_and_save(GtkWidget *widget, RenderContext *context) {
     GtkSnapshot *snapshot = gtk_snapshot_new();
     GdkPaintable *paintable = gtk_widget_paintable_new(widget);
     gdk_paintable_snapshot(paintable, snapshot, context->width, context->height);
@@ -131,7 +131,7 @@ static void capture_and_save(GtkWidget *widget, RenderContext *context) {
 
     if (render_node == NULL) {
         g_printerr("renderer: no render node produced for the widget tree\n");
-        return;
+        return FALSE;
     }
 
     GdkTexture *texture = NULL;
@@ -147,69 +147,48 @@ static void capture_and_save(GtkWidget *widget, RenderContext *context) {
 
     if (texture == NULL) {
         g_printerr("renderer: no texture produced for the widget tree\n");
-        return;
+        return FALSE;
     }
 
     gdk_texture_save_to_png(texture, context->output_path);
     g_object_unref(texture);
-    context->done = TRUE;
+    return TRUE;
 }
 
 /**
- * Captures the widget tree synchronously with the frame clock's after-paint
- * phase (i.e. after a real paint cycle laid out and rendered the tree), then
- * withdraws the toplevel window and quits the main loop.
+ * Captures the widget tree after the first real paint cycle (one frame after
+ * the toplevel is shown), then withdraws the toplevel and quits the loop.
  */
-static void render_after_paint(GdkFrameClock *clock, gpointer user_data) {
+static void capture_and_quit(GdkFrameClock *clock, gpointer user_data) {
     RenderContext *context = user_data;
-    g_signal_handlers_disconnect_by_func(clock, render_after_paint, context);
+    (void) clock;
 
-    capture_and_save(context->root, context);
+    context->done = capture_and_save(context->root, context);
 
     /* Withdraw the toplevel right away so no window remains mapped on the
-     * headless compositor when we quit. */
+     * compositor when we quit. */
     gtk_widget_set_visible(context->root, FALSE);
 
     g_main_loop_quit(context->loop);
 }
 
 /**
- * Frame-clock tick: let two frames go by so the initial layout + paint cycle
- * completes, then hook the capture into the after-paint phase of the next
- * frame and stop ticking.
+ * Realize and show the toplevel, wait for the single initial paint cycle
+ * (hooked via GdkFrameClock::after-paint) and let it capture + quit.
  */
-static gboolean render_frame_callback(GtkWidget *widget,
-                                      GdkFrameClock *clock,
-                                      gpointer user_data) {
-    RenderContext *context = user_data;
-    (void) widget;
-
-    if (context->tick_count++ < 2)
-        return G_SOURCE_CONTINUE;
-
-    g_signal_connect(clock, "after-paint",
-                     G_CALLBACK(render_after_paint), context);
-    return G_SOURCE_REMOVE;
-}
-
-static gboolean watchdog_timeout(gpointer user_data) {
-    g_printerr("renderer: timed out waiting for a frame; "
-               "nothing could be rendered\n");
-    g_main_loop_quit((GMainLoop *) user_data);
-    return G_SOURCE_REMOVE;
-}
-
 static void initialize_main_loop(RenderContext *context) {
-    gtk_widget_add_tick_callback(context->root, render_frame_callback, context,
-                                 NULL);
-
     gtk_widget_set_size_request(context->root, context->width, context->height);
+    gtk_widget_realize(context->root);
+
+    GdkFrameClock *clock = gtk_widget_get_frame_clock(context->root);
+    g_signal_connect(clock, "after-paint", G_CALLBACK(capture_and_quit),
+                     context);
+
     gtk_widget_set_visible(context->root, TRUE);
 
     context->loop = g_main_loop_new(NULL, FALSE);
-    guint watchdog_id = g_timeout_add_seconds(5, watchdog_timeout, context->loop);
     g_main_loop_run(context->loop);
-    g_source_remove(watchdog_id);
+    g_signal_handlers_disconnect_by_func(clock, capture_and_quit, context);
     g_main_loop_unref(context->loop);
     context->loop = NULL;
 }
@@ -256,7 +235,6 @@ int renderer_render_interface(const struct Config config,
         .root = root,
         .width = config.width,
         .height = config.height,
-        .tick_count = 0,
         .done = FALSE,
         .loop = NULL,
     };
