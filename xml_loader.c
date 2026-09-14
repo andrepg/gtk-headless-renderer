@@ -32,29 +32,26 @@
 
 char *load_file(const char *path) {
     gsize length = 0;
-    char *content = NULL;
-    GError *error = NULL;
+
+    g_autoptr(GError) error = NULL;
+    g_autofree char *content = NULL;
 
     if (!g_file_get_contents(path, &content, &length, &error)) {
         g_printerr("load_file: failed to read %s: %s\n", path, error->message);
-        g_error_free(error);
         exit(EXIT_FAILURE);
     }
 
-    g_print("File read: %s\n", content);
-
     /* Copy exactly the file bytes so the buffer is guaranteed NUL-terminated
      * regardless of how g_file_get_contents() decided to read the file. */
-    char *result = g_strndup(content, length);
-    g_free(content);
+    char *file_buffer = g_strndup(content, length);
 
-    return result;
+    return file_buffer;
 }
 
 int render_interface(const char *input_path,
                      const char *output_path,
-                     int width,
-                     int height) {
+                     const int width,
+                     const int height) {
     (void) input_path;
     (void) output_path;
     (void) width;
