@@ -29,6 +29,8 @@
 
 #include <stdlib.h>
 
+#include "component_registry.h"
+
 static const int ARG_INPUT_PATH_IDX = 1;
 static const int ARG_OUTPUT_PATH_IDX = 2;
 static const int ARG_WIDTH_IDX = 3;
@@ -39,11 +41,11 @@ static const int ARG_SRC_DIR_IDX = 5;
  * Command-line configuration parsed from the argument vector.
  */
 struct Config {
-    char *input_path;  /**< Input XML file given to parse/process. */
+    char *input_path; /**< Input XML file given to parse/process. */
     char *output_path; /**< Destination PNG path. */
-    int width;         /**< Canvas width in pixels for the generated image. */
-    int height;        /**< Canvas height in pixels for the generated image. */
-    char *src_dir;     /**< Folder to scan for sibling .ui interfaces (optional; NULL = use input's directory). */
+    int width; /**< Canvas width in pixels for the generated image. */
+    int height; /**< Canvas height in pixels for the generated image. */
+    char *src_dir; /**< Folder to scan for sibling .ui interfaces (optional; NULL = use input's directory). */
 };
 
 /**
@@ -71,6 +73,22 @@ static struct Config parse_config(const int argument_count, char *arguments[]) {
     config.height = height ? height : 600;
 
     return config;
+}
+
+static void initialize_extra_libraries(struct Config config) {
+    // Pin the GDK backend to headless Wayland (see ROADMAP M1). The private
+    // Wayland socket is provided by the launcher (WAYLAND_DISPLAY + XDG_RUNTIME_DIR).
+    g_print("Setting up headless display\n");
+    g_setenv("GDK_BACKEND", "wayland", TRUE);
+
+    // Initialize Adwaita (and Gtk, chained per dependencies)
+    g_print("Initializing Adwaita toolkit\n");
+    adw_init();
+
+    component_registry_init_scan(config.input_path, config.src_dir);
+#ifdef DEBUG
+    component_registry_dump();
+#endif
 }
 
 #endif //GTK_EMBEDDED_PREVIEW_UTILS_H
