@@ -51,13 +51,13 @@ char *load_file(const char *path) {
  * Debug-printer for the parsed DOM (the M7 serializer does not exist yet).
  * Prints element names, attributes and leaf text with indentation.
  */
-static void print_indent(int depth) {
+static void print_indent(const int depth) {
     for (int i = 0; i < depth; i++)
         g_print("  ");
 }
 
-void print_node(const Node *node, const int depth) {
-    for (const Node *current = node; current != NULL; current = current->next) {
+void print_node(const Node *current_node, const int depth) {
+    for (const Node *current = current_node; current != NULL; current = current->next) {
         print_indent(depth);
         g_print("<%s", current->name);
         for (const Attr *attribute = current->attrs;
@@ -78,16 +78,4 @@ void print_node(const Node *node, const int depth) {
             g_print("/>\n");
         }
     }
-}
-
-int render_interface(const char *input_path,
-                     const char *output_path,
-                     const int width,
-                     const int height) {
-    (void) input_path;
-    (void) output_path;
-    (void) width;
-    (void) height;
-
-    return EXIT_SUCCESS;
 }

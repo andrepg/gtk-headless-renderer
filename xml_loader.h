@@ -39,25 +39,11 @@
 char *load_file(const char *path);
 
 /**
- * Dispatch the rendering mechanism and save the output image to given path.
- *
- * @param input_path XML file to render
- * @param output_path where to store the screenshot
- * @param width in pixels to horizontal
- * @param height in pixels to vertical
- * @return EXIT code of FAILURE or SUCCESS
- */
-int render_interface(const char *input_path,
-                     const char *output_path,
-                     int width,
-                     int height);
-
-/**
  * Debug-print the parsed DOM tree with indentation.
  *
- * @param root  Root node to start printing from.
+ * @param current_node  Root node to start printing from.
  * @param depth Initial indentation depth (usually 0).
  */
-void print_node(const Node *root, int depth);
+void print_node(const Node *current_node, int depth);
 
 #endif //GTK_EMBEDDED_PREVIEW_RENDERER_H
