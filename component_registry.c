@@ -31,6 +31,7 @@
 #include "xml_parser.h"
 
 #include <glib.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Index of custom components: class name -> TemplateEntry. */
@@ -177,6 +178,14 @@ void component_registry_init_scan(const char *input_path, const char *ui_dir) {
         s_dir = g_strdup(ui_dir);
     } else {
         s_dir = g_path_get_dirname(input_path);
+    }
+
+    // Register cleanup to run automatically when the process exits so
+    // callers do not need to remember component_registry_cleanup().
+    static gboolean atexit_registered = FALSE;
+    if (!atexit_registered) {
+        atexit(component_registry_cleanup);
+        atexit_registered = TRUE;
     }
 
     do_scan();
