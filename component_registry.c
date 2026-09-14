@@ -40,7 +40,7 @@ static gboolean s_scanned = FALSE;
 
 /* Per-class entry: file path + cached <template> subtree. */
 typedef struct {
-    char *path;          /* owning .ui file path */
+    char *path; /* owning .ui file path */
     Node *template_node; /* deep-cloned <template> subtree, or NULL */
 } TemplateEntry;
 
@@ -60,16 +60,17 @@ static const char *const k_known_prefixes[] = {
 
 /* ---- builtin detection -------------------------------------------- */
 
-static int class_is_builtin(const char *class_name) {
+gboolean component_registry_is_builtin(const char *class_name) {
     if (class_name == NULL || class_name[0] == '\0')
-        return 1;
+        return TRUE;
 
     for (int i = 0; k_known_prefixes[i] != NULL; i++) {
         if (strncmp(class_name, k_known_prefixes[i],
                     strlen(k_known_prefixes[i])) == 0)
-            return 1;
+            return TRUE;
     }
-    return 0;
+
+    return FALSE;
 }
 
 /* ---- sibling *.ui scan --------------------------------------------- */
@@ -111,7 +112,7 @@ static void index_ui_file(char *ui_path) {
     Node *tpl = find_child(doc, "template");
     const char *class_name = tpl != NULL ? get_attr(tpl, "class") : NULL;
     if (class_name != NULL && class_name[0] != '\0'
-            && !class_is_builtin(class_name)) {
+        && !component_registry_is_builtin(class_name)) {
         TemplateEntry *entry = g_new(TemplateEntry, 1);
         entry->path = ui_path;
         entry->template_node = clone_node(tpl);
@@ -203,7 +204,7 @@ void component_registry_dump(void) {
 #endif
 
 const char *component_registry_resolve_path(const char *class_name) {
-    if (class_is_builtin(class_name))
+    if (component_registry_is_builtin(class_name))
         return NULL;
 
     const TemplateEntry *entry = s_templates != NULL
@@ -218,7 +219,7 @@ const char *component_registry_resolve_path(const char *class_name) {
 }
 
 Node *component_registry_get_template(const char *class_name) {
-    if (class_is_builtin(class_name))
+    if (component_registry_is_builtin(class_name))
         return NULL;
 
     const TemplateEntry *entry = s_templates != NULL

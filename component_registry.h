@@ -58,6 +58,15 @@ Node *component_registry_get_template(const char *class_name);
  * component_registry_cleanup(). */
 void component_registry_cleanup(void);
 
+/**
+ * Checks if a given component is native to GTK/Adwaita toolkit or if
+ * it is a custom component written by the developer
+ *
+ * @param class_name class to search in hash table
+ * @return true if native, false if custom
+ */
+gboolean component_registry_is_builtin(const char *class_name);
+
 #ifdef DEBUG
 /* Print every indexed custom component (class name -> owning .ui path) to
  * stdout. Requires a prior call to component_registry_init_scan(). */
