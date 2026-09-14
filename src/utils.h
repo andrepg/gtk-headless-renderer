@@ -82,6 +82,12 @@ static inline void initialize_extra_libraries(struct Config config) {
     g_print("Setting up headless display\n");
     g_setenv("GDK_BACKEND", "wayland", TRUE);
 
+    // Force the software cairo renderer: the Flatpak SDK ships a Vulkan-only
+    // Mesa (zink EGL, no swrast/radeonsi DRI drivers) and the sandbox has no
+    // --device=dri, so the ngl (OpenGL) renderer fails with noisy libEGL/MESA
+    // fallback warnings. Cairo rasterizes the same render node with no GL at all.
+    g_setenv("GSK_RENDERER", "cairo", TRUE);
+
     // Initialize Adwaita (and Gtk, chained per dependencies)
     g_print("Initializing Adwaita toolkit\n");
 
