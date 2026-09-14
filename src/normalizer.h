@@ -25,17 +25,25 @@
 #include "xml_parser.h"
 
 /**
- * Apply all normalization passes to the parsed DOM in-place.
+ * Apply all normalization passes to the parsed DOM in-place and return the
+ * canonical root.
  *
  * Currently handles:
- *  - <template class="X" parent="Y"> → copies parent value into class.
+ *  - <template class="X" parent="Y"> → copies parent value into class and
+ *    retags the element to <object> so GtkBuilder instantiates it.
  *  - <object class="Custom"> → expands in place to the registered template's
  *    parent class (<template parent="Y">) with its subtree, merging usage-site
  *    <property> overrides and recursing into nested custom objects (cycle
  *    guarded).
+ *  - Final shape (ROADMAP M6): the returned tree is GtkBuilder-ready — the
+ *    root is <interface> (a non-interface root is wrapped) and it carries a
+ *    <requires lib="gtk" version="4.0"/> element.
  *
- * @param root Root of the DOM tree to normalize.
+ * @param root Root of the DOM tree to normalize (owned by the caller).
+ * @return The canonical root. If root was not an <interface>, a fresh
+ *         <interface> node now owns it; free the returned node, not the
+ *         original.
  */
-void normalize_templates(Node *root);
+Node *normalize_templates(Node *root);
 
 #endif /* GTK_EMBEDDED_PREVIEW_NORMALIZATION_H */

@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.gnu/licenses/>.
 
 /**
- * @file normalization.c
+ * @file normalizer.c
  * @brief DOM normalization passes for the preview pipeline.
  *
  * Each pass walks the tree and mutates nodes in-place so that downstream
@@ -67,7 +67,12 @@ static Node *normalize_node(Node *node, ResolutionStack *stack);
 
 /**
  * Checks if current node is a custom template and replace it by its parent
- * declaration, allowing a clean transition between parent/children nodes
+ * declaration, allowing a clean transition between parent/children nodes.
+ *
+ * The class fix-up (parent -> class) and the <template> -> <object> retag
+ * happen here, so no <template> element survives normalization: the
+ * GtkBuilder-instantiation semantic lives only in this module (ROADMAP M6).
+ *
  * @param node current node to normalize
  */
 static void normalize_tag_template(Node *node) {
@@ -79,6 +84,48 @@ static void normalize_tag_template(Node *node) {
         set_attr(node, "class", parent_val);
         remove_attr(node, "parent");
     }
+
+    g_free(node->name);
+    node->name = g_strdup("object");
+}
+
+/* ---- final normalization (ROADMAP M6) ----------------------------- */
+
+/**
+ * Allocate a fresh, attribute-less element node.
+ */
+static Node *new_element(const char *name) {
+    Node *node = g_new0(Node, 1);
+    node->name = g_strdup(name);
+    return node;
+}
+
+/**
+ * Prepend child as the new head of parent's child list.
+ */
+static void prepend_child(Node *parent, Node *child) {
+    child->parent = parent;
+    child->next = parent->children;
+    parent->children = child;
+}
+
+/**
+ * Guarantee an <interface> root carries a <requires lib="gtk" version="4.0"/>
+ * element as its first child (ROADMAP M6).
+ *
+ * @return root, unchanged, with <requires> prepended when absent.
+ */
+static Node *ensure_requires(Node *root) {
+    if (find_child(root, "requires") != NULL)
+        return root;
+
+    Node *requires = new_element("requires");
+    // set_attr prepends, so build in reverse order to keep the attribute
+    // chain in the conventional lib="gtk" version="4.0" order.
+    set_attr(requires, "version", "4.0");
+    set_attr(requires, "lib", "gtk");
+    prepend_child(root, requires);
+    return root;
 }
 
 /**
@@ -229,13 +276,22 @@ static Node *normalize_node(Node *node, ResolutionStack *stack) {
     return node;
 }
 
-void normalize_templates(Node *root) {
+Node *normalize_templates(Node *root) {
     if (root == NULL) {
         g_printerr("XML does not have a valid root node\n");
-        return;
+        return NULL;
     }
 
     ResolutionStack stack;
     stack_init(&stack);
     normalize_node(root, &stack);
+
+    if (g_str_equal(root->name, "interface"))
+        return ensure_requires(root);
+
+    // Wrap the (now canonical) root in an <interface> so the tree is
+    // GtkBuilder-ready (ROADMAP M6). The fresh node owns the old root.
+    Node *interface = new_element("interface");
+    prepend_child(interface, root);
+    return ensure_requires(interface);
 }

@@ -15,7 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 /*
- * component_registry.c
+ * @file component_registry.c
  *
  * Display-free custom-component registry for
  * gtk-embedded-preview, built on Phase-2/M3's xml_parser.c DOM.
