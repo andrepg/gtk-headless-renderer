@@ -17,15 +17,18 @@
 #ifndef GTK_EMBEDDED_PREVIEW_RENDERER_H
 #define GTK_EMBEDDED_PREVIEW_RENDERER_H
 
-#include "utils.h"
 #include "xml_parser.h"
 
+/* Forward declaration of the CLI configuration struct (defined in utils.h). */
+struct Config;
+
 /**
- * Render a normalized DOM to a PNG snapshot (ROADMAP M7-M10).
+ * Render a normalized DOM to a PNG snapshot (ROADMAP M8-M10).
  *
- * Serializes the Node tree back to XML, loads it with GtkBuilder, snapshots
- * the root widget into a GskRenderNode and exports it as a GdkTexture to
- * config.output_path at config.width x config.height.
+ * The Node tree is re-serialized to XML by the serializer module (M7), loaded
+ * with GtkBuilder (M8), then the root widget is snapshotted into a
+ * GskRenderNode and rasterized to PNG at config.output_path in config.width x
+ * config.height (M9/M10).
  *
  * @param config       Parsed CLI configuration (output_path/width/height).
  * @param current_node Normalized root node of the input document.
