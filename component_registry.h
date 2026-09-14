@@ -1,11 +1,24 @@
+// Copyright (C) 2026 apg
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 /*
  * component_registry.h
- * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * Phase 2 (M4): display-free custom-component registry for gtk-embedded-preview.
- *
- * After Phase 2's xml_parser.h builds the full DOM of a .ui file,
- * this registry lets phase 3 resolve every custom component class to the
+ * After xml_parser.h builds the full DOM of a .ui file,
+ * this registry lets resolve every custom component class to the
  * sibling .ui file that declares its <template class="X">, so the display-free
  * normalizer can later stack components without re-scanning every file.
  *
