@@ -31,6 +31,14 @@
 #include <adwaita.h>
 #include "component_registry.h"
 
+/**
+ * Compiler version, set by the Makefile (-DVERSION="..."), with a fallback
+ * for direct builds that bypass make.
+ */
+#ifndef VERSION
+#define VERSION "dev"
+#endif
+
 static const int ARG_INPUT_PATH_IDX = 1;
 static const int ARG_OUTPUT_PATH_IDX = 2;
 static const int ARG_WIDTH_IDX = 3;
@@ -43,8 +51,13 @@ static const int ARG_SRC_DIR_IDX = 5;
 struct Config {
     char *input_path; /**< Input XML file given to parse/process. */
     char *output_path; /**< Destination PNG path. */
-    int width; /**< Canvas width in pixels for the generated image. */
-    int height; /**< Canvas height in pixels for the generated image. */
+    /**
+     * Target width in pixels for the preview. Only the width is forced onto
+     * the widget tree; the height stays natural (see renderer.c).
+     */
+    int width;
+    /** Target height in pixels, used only as a snapshot fallback. */
+    int height;
     char *src_dir; /**< Folder to scan for sibling .ui interfaces (optional; NULL = use input's directory). */
 };
 
