@@ -79,7 +79,10 @@ static GtkWidget *get_first_widget(GtkBuilder *builder) {
 /**
  * Resolve the root widget for rendering. Windows are returned directly;
  * everything else is wrapped in a transient GtkWindow so GTK can lay it
- * out. Adwaita presenter dialogs are unwrapped to their child.
+ * out. Adwaita dialogs are either unwrapped to their child widget or, when
+ * the dialog has no explicit child (e.g. AdwShortcutsDialog whose content
+ * is built from model objects via adw_dialog_present), presented inside an
+ * AdwWindow so the dialog can construct and render its content.
  *
  * @param builder Builder holding the widget tree.
  * @return Renderable root widget, or NULL (with a diagnostic) when none
@@ -97,13 +100,23 @@ static GtkWidget *resolve_render_root(GtkBuilder *builder) {
 
     if (ADW_IS_DIALOG(root)) {
         GtkWidget *content = adw_dialog_get_child(ADW_DIALOG(root));
-        if (content == NULL) {
-            g_printerr("renderer: the template roots at an empty AdwDialog\n");
-            return NULL;
+        if (content != NULL) {
+            g_printerr("renderer: template roots at an AdwDialog; "
+                       "rendering its child (best-effort)\n");
+            root = content;
+        } else {
+            /* Dialogs without an explicit child (e.g. AdwShortcutsDialog)
+             * need adw_dialog_present() to build their content.  Present
+             * inside an AdwWindow so the dialog is rendered within the
+             * window's widget tree and capturable via the window paintable. */
+            g_printerr("renderer: template roots at an AdwDialog without "
+                       "child; presenting in AdwWindow\n");
+            GtkWidget *host = GTK_WIDGET(adw_window_new());
+            gtk_window_set_decorated(GTK_WINDOW(host), FALSE);
+            gtk_window_set_resizable(GTK_WINDOW(host), FALSE);
+            adw_dialog_present(ADW_DIALOG(root), host);
+            return host;
         }
-        g_printerr("renderer: template roots at an AdwDialog; "
-                   "rendering its child (best-effort)\n");
-        root = content;
     }
 
     GtkWidget *wrapper_window = gtk_window_new();
