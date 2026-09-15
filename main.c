@@ -28,6 +28,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 #include <adwaita.h>
 #include "utils.h"
@@ -35,6 +36,19 @@
 #include "xml_parser.h"
 #include "normalizer.h"
 #include "renderer.h"
+
+/**
+ * Print the compiler version and exit successfully. Handled before any
+ * toolkit initialization so it works in any environment.
+ */
+static int print_version(void) {
+    g_print("gtk_embedded_preview %s\n", VERSION);
+    g_print("GTK %d.%d.%d, libadwaita %d.%d.%d\n",
+            gtk_get_major_version(), gtk_get_minor_version(),
+            gtk_get_micro_version(), ADW_MAJOR_VERSION, ADW_MINOR_VERSION,
+            ADW_MICRO_VERSION);
+    return EXIT_SUCCESS;
+}
 
 /**
  * Requires at least the input and output paths. Selects a headless Wayland
@@ -51,10 +65,17 @@
 int main(const int argument_count, char *arguments[]) {
     g_print("\n\n\n");
 
+    if (argument_count > 1 && strcmp(arguments[1], "--version") == 0)
+        return print_version();
+
     if (argument_count < 3) {
         g_printerr("Wrong number of arguments.");
         return EXIT_FAILURE;
     }
+
+#ifdef DEBUG
+    g_print("gtk_embedded_preview %s (debug build)\n", VERSION);
+#endif
 
     g_print("Parsing CLI arguments\n\n");
     const struct Config config = parse_config(argument_count, arguments);
