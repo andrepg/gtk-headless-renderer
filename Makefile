@@ -22,12 +22,13 @@ BUILD_TREE ?= _build
 APP_ID     ?= io.github.andrepg.GtkEmbeddedPreview
 CC         ?= cc
 
-# Build mode: debug is the default. Use `make release` for a -O3 -DNDEBUG build.
+# Build mode: debug is the default.
+# Use `make release-local` or `make release` for a release build.
 DEBUG ?= 1
 
-# Build-mode stamp so toggling DEBUG forces a rebuild (make does not track
-# CFLAGS changes by itself).
+# Build-mode stamp so toggling DEBUG forces a rebuild.
 BUILD_MODE_FILE ?= $(BUILD_TREE)/.build-mode
+
 ifeq ($(DEBUG),1)
 BUILD_MODE := debug
 else
@@ -38,6 +39,7 @@ TARGET = $(BUILD_TREE)/gtk_embedded_preview
 OBJS   = $(patsubst %.c,$(BUILD_TREE)/%.o,$(SRCS))
 DEPS   = $(OBJS:.o=.d)
 PKGS   = libadwaita-1 libxml-2.0
+
 SRCS   = main.c \
          src/xml_loader.c \
          src/xml_parser.c \
@@ -46,35 +48,74 @@ SRCS   = main.c \
          src/serializer.c \
          src/renderer.c
 
-# Extra program arguments, e.g.: make run ARGS="in.ui out.png 800 600 src/"
+# Extra program arguments, e.g.:
+# make run ARGS="in.ui out.png 800 600 src/"
 ARGS   ?=
 
 CFLAGS  += -std=gnu17 -Isrc -Wall -Wextra $(shell pkg-config --cflags $(PKGS))
+
 ifeq ($(DEBUG),1)
-  CFLAGS += -g -O0 -DDEBUG
+CFLAGS += -g -O0 -DDEBUG
 else
-  CFLAGS += -O3 -DNDEBUG
+CFLAGS += -O3 -DNDEBUG
 endif
-LDLIBS  += $(shell pkg-config --libs $(PKGS))
 
-FBP := flatpak build --bind-mount=/src="$(CURDIR)"
+LDLIBS += $(shell pkg-config --libs $(PKGS))
 
-.PHONY: build run release clean
+.PHONY: \
+	build \
+	build-local \
+	build-flatpak \
+	release \
+	release-local \
+	run \
+	all \
+	clean \
+	clean-if-mode-changed
 
-build:
-	@test -d "$(BUILD_DIR)" || flatpak build-init "$(BUILD_DIR)" "$(APP_ID)" "$(SDK)" "$(SDK)"
-	$(FBP) "$(BUILD_DIR)" make -C /src -f /src/Makefile clean-if-mode-changed DEBUG=$(DEBUG)
-	$(FBP) "$(BUILD_DIR)" make -C /src -f /src/Makefile all DEBUG=$(DEBUG)
+# ============================================================
+# LOCAL BUILD
+# ============================================================
 
-release:
-	$(MAKE) build DEBUG=0
+# Backwards-compatible default build target.
+build: build-local
 
-# Wipe the build tree inside the sandbox when the requested build mode differs
-# from the last one (or when an object tree exists with no recorded mode).
-# Cleaning outside the sandbox would race with its bind-mounted writes.
-.PHONY: clean-if-mode-changed
+build-local: all
+
+release: release-local
+
+release-local:
+	$(MAKE) build-local DEBUG=0
+
+# ============================================================
+# FLATPAK SANDBOX BUILD
+# ============================================================
+#
+# This target MUST be executed from inside a Flatpak sandbox.
+#
+# Example:
+#
+#   flatpak run --command=make org.gnome.Sdk//50 \
+#       -C /path/to/project build-flatpak
+#
+# The build artifacts are written directly to BUILD_TREE in the
+# current project directory, e.g.:
+#
+#   ./_build/gtk_embedded_preview
+#
+# No `flatpak build` or `flatpak build-init` is invoked here.
+#
+
+build-flatpak:
+	$(MAKE) all DEBUG=$(DEBUG)
+
+# ============================================================
+# INTERNAL BUILD GRAPH
+# ============================================================
+
 clean-if-mode-changed:
-	@if { [ -f "$(BUILD_MODE_FILE)" ] && [ "$$(cat "$(BUILD_MODE_FILE)")" != "$(BUILD_MODE)" ]; } \
+	@if { [ -f "$(BUILD_MODE_FILE)" ] && \
+	      [ "$$(cat "$(BUILD_MODE_FILE)")" != "$(BUILD_MODE)" ]; } \
 	    || { [ ! -f "$(BUILD_MODE_FILE)" ] && [ -f "$(TARGET)" ]; }; then \
 		echo "Setting up a $(BUILD_MODE) build tree"; \
 		rm -rf "$(BUILD_TREE)"; \
@@ -95,15 +136,24 @@ $(BUILD_TREE)/%.o: %.c | $(BUILD_TREE)
 $(BUILD_TREE):
 	mkdir -p $@
 
-# The binary links libxml2.so.16 from the SDK, which the host does not have
-# (host only ships libxml2.so.2). Run inside the SDK runtime instead; the
-# Wayland socket also lets adw_init() succeed against the host compositor.
-run: build
-	flatpak run --share=ipc --socket=wayland --socket=session-bus \
+# ============================================================
+# RUN
+# ============================================================
+#
+# Runtime execution still happens inside the GNOME SDK/runtime,
+# because the resulting binary is linked against the SDK libraries.
+#
+
+run: build-flatpak
+	flatpak run \
+		--share=ipc \
+		--socket=wayland \
+		--socket=session-bus \
 		--filesystem="$(CURDIR)" \
 		--filesystem="home" \
 		--command="$(CURDIR)/$(TARGET)" \
-		"$(SDK)" $(ARGS)
+		"$(SDK)" \
+		$(ARGS)
 
 -include $(DEPS)
 
