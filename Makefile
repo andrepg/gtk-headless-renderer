@@ -20,6 +20,7 @@ SDK        ?= org.gnome.Sdk//50
 BUILD_DIR  ?= .flatpak-build
 BUILD_TREE ?= _build
 APP_ID     ?= io.github.andrepg.GtkEmbeddedPreview
+VERSION    ?= 0.1.0
 CC         ?= cc
 
 # Build mode: debug is the default.
@@ -52,7 +53,7 @@ SRCS   = main.c \
 # make run ARGS="in.ui out.png 800 600 src/"
 ARGS   ?=
 
-CFLAGS  += -std=gnu17 -Isrc -Wall -Wextra $(shell pkg-config --cflags $(PKGS))
+CFLAGS  += -std=gnu17 -Isrc -Wall -Wextra -DVERSION=\"$(VERSION)\" $(shell pkg-config --cflags $(PKGS))
 
 ifeq ($(DEBUG),1)
 CFLAGS += -g -O0 -DDEBUG
