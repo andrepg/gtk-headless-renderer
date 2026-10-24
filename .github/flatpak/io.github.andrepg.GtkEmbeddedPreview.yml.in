@@ -1,0 +1,37 @@
+# Template usado por .github/workflows/release.yml.
+# O placeholder de versão é substituído por 50 ou 51.
+app-id: io.github.andrepg.GtkEmbeddedPreview
+runtime: org.gnome.Platform
+runtime-version: "@GNOME_VERSION@"
+sdk: org.gnome.Sdk
+command: gtk-headless-preview
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=home
+
+build-options:
+  env:
+    DEBUG: "0"
+
+modules:
+  - name: gtk-headless-preview
+    buildsystem: simple
+    build-commands:
+      - make clean
+      - make all DEBUG=0
+      - install -Dm755 _build/gtk_embedded_preview /app/bin/gtk-headless-preview
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - .git
+          - .idea
+          - .flatpak-build
+          - _build
+          - flatpak_app
+          - flatpak_repo
+          - output.png
