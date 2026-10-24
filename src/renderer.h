@@ -27,8 +27,9 @@ struct Config;
  *
  * The Node tree is re-serialized to XML by the serializer module (M7), loaded
  * with GtkBuilder (M8), then the root widget is snapshotted into a
- * GskRenderNode and rasterized to PNG at config.output_path in config.width x
- * config.height (M9/M10).
+ * GskRenderNode and rasterized to PNG at config.output_path. The toplevel is
+ * constrained to config.width only; the natural content height is allocated
+ * and the snapshot is taken at that realized extent (M9/M10).
  *
  * @param config       Parsed CLI configuration (output_path/width/height).
  * @param current_node Normalized root node of the input document.
